@@ -1,0 +1,67 @@
+---
+title: "Developing Data Products - Week 2 Project"
+author: "Bo Suzow"
+date: "January 3, 2018"
+output: html_document
+---
+
+##Map featuring community colleges in southern California.
+
+Zoom in and click on circles to see the clickable names and completion rates ([data source: The College Scorecard for the 2015-16 year](https://collegescorecard.ed.gov/data/)).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r dataload, include=FALSE}
+
+# MERGED2015_16_CA_JC.csv is a subset of MERGED2015_16_PP.csv downloaded 
+# from https://collegescorecard.ed.gov/data/ filtered on the following criteria:
+#        ST = "CA" & PREDDEG = "2" (associate degree institutions)
+
+scCAJC = read.csv("MERGED2015_16_CA_JC.csv",na.strings="NULL")
+cmplCAJC = scCAJC %>% 
+           filter(as.numeric(substr(ZIP,1,5))<93000) %>%
+           select(UNITID, INSTNM, INSTURL, ZIP, C150_L4, LATITUDE, LONGITUDE)
+
+nameURL  = paste("<a href='http://",cmplCAJC$INSTURL,"'>",cmplCAJC$INSTNM,"</a>",sep="")
+popupText = paste(nameURL, '<BR>',
+                  'Cmpl Rate:',
+                  as.character(cmplCAJC$C150_L4*100),'%',
+                  sep="")
+
+```
+
+```{r showDate, echo=FALSE, comment="", eval=FALSE}
+format(Sys.time(),"%B %d, %Y")
+
+```
+
+```{r leaflet, echo=FALSE, warning=FALSE}
+library(leaflet)
+
+# placing a marker for a location
+# lat: NS; lng: EW
+
+CAJC_map = cmplCAJC %>% leaflet() %>% 
+   
+   addTiles() %>%
+   
+   addCircles(lat = cmplCAJC$LATITUDE,
+              lng = cmplCAJC$LONGITUDE,
+              weight = 1,
+              radius = (cmplCAJC$C150_L4) * 100*50,
+              popup = popupText
+             ) 
+   
+   # addPopups(lat=cmplCAJC$LATITUDE,
+   #           lng=cmplCAJC$LONGITUDE,
+   #           popupText,
+   #           options=popupOptions(closeButton=FALSE))
+   # 
+   
+CAJC_map
+
+
+
+```
